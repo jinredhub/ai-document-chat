@@ -1,0 +1,85 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial;
+  background: #f5f6fa;
+  margin: 0;
+}
+body > .top {
+  background-color: #c4daff;
+  padding: 10px;
+}
+body > .top > .wrapper {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+body > .top > .wrapper .logo {
+  color: black;
+  font-weight: bold;
+  font-size: 18px;
+}
+body .container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 10px;
+  display: flex;
+  gap: 15px;
+}
+body .container h2,
+body .container h3 {
+  margin: 0;
+}
+body .container > .left {
+  flex: 1 1 60%;
+  padding: 20px;
+  border: 1px solid #b3b3b3;
+  border-radius: 10px;
+  background-color: white;
+}
+body .container > .left > h2 {
+  padding-bottom: 10px;
+}
+body .container > .right {
+  flex: 1 1 40%;
+  background-color: #f3f6fe;
+  padding: 20px;
+  border: 1px solid #b3b3b3;
+  border-radius: 10px;
+}
+body .container > .right #chat {
+  height: 350px;
+  overflow-y: auto;
+  padding: 20px 0;
+}
+body .container > .right #chat .message {
+  padding: 0 10px;
+  margin: 10px 0;
+  border-radius: 8px;
+  white-space: pre-wrap;
+}
+body .container > .right #chat .user {
+  background: #2b54df;
+}
+body .container > .right #chat .ai {
+  background: #fff;
+}
+body .container > .right #question {
+  width: calc(100% - 60px);
+}
+body .container input,
+body .container button {
+  padding: 12px;
+  margin: 8px 0;
+}
+body .container button {
+  background: #2563eb;
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+/*# sourceMappingURL=style.css.map */

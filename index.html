@@ -1,0 +1,82 @@
+<!doctype html>
+<html>
+  <head>
+    <title>PDF AI Assistant</title>
+    <!-- css -->
+    <link rel="stylesheet" type="text/css" href="css/style.css" />
+  </head>
+
+  <body>
+    <div class="top">
+      <div class="wrapper">
+        <div class="logo">AskYourPDF</div>
+      </div>
+    </div>
+    <div class="container">
+      <div class="left">
+        <h2>Your document</h2>
+
+        <label for="apiKey">OpenAI API Key</label>
+        <input
+          type="password"
+          id="apiKey"
+          placeholder="Enter your API key"
+          style="width: 90%"
+        />
+
+        <hr />
+
+        <h3>Upload PDF</h3>
+
+        <input type="file" id="pdfInput" accept=".pdf" />
+
+        <button id="uploadPdfButton">Upload PDF</button>
+
+        <p id="status"></p>
+
+        <hr />
+
+        <h3>View PDF</h3>
+
+        <div>
+          <button id="prevPage">Previous</button>
+
+          <span id="pageNum">0</span> /
+          <span id="pageCount">0</span>
+
+          <button id="nextPage">Next</button>
+        </div>
+
+        <div class="pdfContainer">
+          <canvas id="pdfCanvas"></canvas>
+        </div>
+      </div>
+
+      <div class="right">
+        <h2>AI Assist</h2>
+
+        <div id="chat">
+          <div class="message ai">
+            Upload a PDF and ask me anything about it.
+          </div>
+        </div>
+
+        <input type="text" id="question" placeholder="Ask a question..." />
+
+        <button id="askBtn" disabled>Ask</button>
+      </div>
+    </div>
+
+    <!-- jquery -->
+    <script
+      src="https://code.jquery.com/jquery-3.4.0.min.js"
+      integrity="sha256-BJeo0qm959uMBGb65z40ejJYGSgR7REI4+CW1fNKwOg="
+      crossorigin="anonymous"
+    ></script>
+
+    <!-- loader -->
+    <script type="module" src="/js/loader.js"></script>
+
+    <script src="/js/main.js"></script>
+  </body>
+</html>
