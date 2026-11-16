@@ -2,6 +2,17 @@
 <html>
   <head>
     <title>PDF AI Assistant</title>
+    <!-- favicon -->
+    <!-- <link rel="shortcut icon" href="./images/favicon.ico" /> -->
+    <!-- google fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+    <!-- normalize -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css"
+    />
     <!-- css -->
     <link rel="stylesheet" type="text/css" href="css/style.css" />
   </head>
@@ -9,34 +20,32 @@
   <body>
     <div class="top">
       <div class="wrapper">
-        <div class="logo">AskYourPDF</div>
+        <div class="logo">
+          AskYourPDF
+        </div>
       </div>
     </div>
     <div class="container">
       <div class="left">
-        <h2>Your document</h2>
+        <h2>Upload PDF</h2>
 
-        <label for="apiKey">OpenAI API Key</label>
-        <input
-          type="password"
-          id="apiKey"
-          placeholder="Enter your API key"
-          style="width: 90%"
-        />
-
-        <hr />
-
-        <h3>Upload PDF</h3>
-
-        <input type="file" id="pdfInput" accept=".pdf" />
-
-        <button id="uploadPdfButton">Upload PDF</button>
-
-        <p id="status"></p>
+        <div class="uploadContainer">
+          <input
+            type="password"
+            id="apiKey"
+            placeholder="1. Enter your OpenAI API key"
+          />
+          
+          <!-- <input type="file" id="pdfInput" accept=".pdf" /> -->
+          <input type="file" id="pdfInput" class="inputfile" accept=".pdf" />
+          <label for="pdfInput"><span>2. Choose a file</span></label>
+          <button id="uploadPdfButton">3. Upload PDF</button>
+          <p id="status"></p>
+        </div>
 
         <hr />
 
-        <h3>View PDF</h3>
+        <h3>PDF Viewer</h3>
 
         <div>
           <button id="prevPage">Previous</button>

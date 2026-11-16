@@ -3,8 +3,8 @@
 }
 
 body {
-  font-family: Arial;
-  background: #f5f6fa;
+  font-family: "Inter", sans-serif;
+  background: white;
   margin: 0;
 
   > .top {
@@ -18,8 +18,8 @@ body {
 
       .logo {
         color: black;
-        font-weight: bold;
-        font-size: 18px;
+        font-weight: 500;
+        font-size: 22px;
       }
     }
   }
@@ -34,17 +34,24 @@ body {
     h2,
     h3 {
       margin: 0;
+      font-weight: 400;
     }
 
     > .left {
       flex: 1 1 60%;
+      background-color: #f3f3f3;
       padding: 20px;
       border: 1px solid #b3b3b3;
       border-radius: 10px;
-      background-color: white;
 
       > h2 {
         padding-bottom: 10px;
+      }
+
+      .uploadContainer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
       }
     }
 
@@ -54,9 +61,10 @@ body {
       padding: 20px;
       border: 1px solid #b3b3b3;
       border-radius: 10px;
+      height: calc(100vh - 70px);
 
       #chat {
-        height: 350px;
+        height: calc(100% - 90px);
         overflow-y: auto;
         padding: 20px 0;
 
@@ -96,3 +104,37 @@ body {
     }
   }
 }
+
+/*custom input file---------------*/
+.inputfile {
+  width: 0.1px;
+  height: 0.1px;
+  opacity: 0;
+  overflow: hidden;
+  position: absolute;
+  z-index: -1;
+}
+.inputfile + label {
+  font-size: 1.1rem;
+  font-weight: normal;
+  color: white;
+  background-color: #2563eb;
+  display: inline-block;
+  padding: 12px;
+  border: 1px solid #878786;
+  text-align: center;
+  border-radius: 5px;
+}
+// .inputfile:focus + label,
+// .inputfile + label:hover {
+//   background-color: #f59d18;
+//   color: white;
+// }
+.inputfile:focus + label {
+  outline: 1px dotted #000;
+  outline: -webkit-focus-ring-color auto 5px;
+}
+.inputfile + label * {
+  pointer-events: none;
+}
+/*end custom input file--------------*/

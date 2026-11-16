@@ -1,7 +1,6 @@
 $(document).ready(function () {
     console.log("pdfjsLib", pdfjsLib);
 
-    // previous/next example? (from pdf.js doc) + input ======================
     let pdfDoc = null;
     let pageNum = 1;
     let pageRendering = false;
@@ -94,7 +93,10 @@ $(document).ready(function () {
     }
     document.getElementById("nextPage").addEventListener("click", onNextPage);
 
-    // 
+    // end pdf.js ============================
+
+    // upload pdf, ask questions =======================
+
     let fileId = null;
 
     function addMessage(message, type) {
@@ -246,5 +248,31 @@ $(document).ready(function () {
         }
     }
     $("#askBtn").on("click", askQuestion);
+
+    // custom file input -------------------------
+    const inputs = document.querySelectorAll('.inputfile');
+    Array.prototype.forEach.call(inputs, function(input){
+        const label = input.nextElementSibling;
+        const labelVal = label.innerHTML;
+
+        input.addEventListener('change', function(e){
+            let fileName = '';
+            if(this.files && this.files.length > 1){
+                fileName = (this.getAttribute('data-multiple-caption') || '').replace('{count}', this.files.length);
+            }
+            else{
+                fileName = e.target.value.split('\\').pop();
+            }
+
+            if(fileName){
+                label.querySelector('span').innerHTML = fileName;
+            }
+            else{
+                label.innerHTML = labelVal;
+            }
+        });
+    });
+    // end custom file input -------------------------
+
 
 });
