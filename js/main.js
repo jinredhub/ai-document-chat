@@ -1,3 +1,28 @@
+/*
+    - The core functionality of pdfjsLib revolves around a few primary 
+    asynchronous methods used to load, read, extract, and render documents
+
+    1. get/load document ------------------------
+    // this will return PDFDocumentLoadingTask instance
+    const loadingTask = pdfjsLib.getDocument({url: ''hi.pdf});
+    loadingTask.promise.then(function(pdf) {
+        // you can now use pef here 
+    });
+
+    2. working with page ----------------------
+    // fetches a specific page from the loaded PDF doc.
+    pdfDoc.getPage(1).then(function(page) {
+        // you can now use page here
+    });
+
+    // calculates the dimensional layout (with and height) of a page at a given zoom scale
+    page.getViewport({ scale, rotation });
+
+    3. rendering the page -----------------------
+    // renders the PDF page graphics into a target 2D canvas
+    page.render(renderPrameters)
+*/
+
 $(document).ready(function () {
     console.log("pdfjsLib", pdfjsLib);
 
@@ -5,40 +30,86 @@ $(document).ready(function () {
     let pageNum = 1;
     let pageRendering = false;
     let pageNumPending = null;
-    let scale = 0.8;
+
     const canvas = document.getElementById("pdfCanvas");
     const ctx = canvas.getContext("2d");
+    const textLayerDiv = document.getElementById("textLayer");
+    const container = document.getElementById("pdfContainer");
 
     // get page info from document, resize canvas accordingly, and render page
-    function renderPage(num) {
+    async function renderPage(num) {
+        if (!pdfDoc) return;
+
         pageRendering = true;
 
-        pdfDoc.getPage(num).then(function (page) {
-        const viewport = page.getViewport({ scale: scale });
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
+        try {
+            const page = await pdfDoc.getPage(num);
 
-        // render pdf page into canvas context
-        const renderContext = {
-            canvasContext: ctx,
-            viewport: viewport,
-        };
+            // base viewport at scale 1.0 to get original pdf dimensions
+            const unscaledViewport = page.getViewport({ scale: 1.0 });
 
-        const renderTask = page.render(renderContext);
+            // calculate scale dynamically to fit the container's current width
+            const containerWidth = container.clientWidth || unscaledViewport.width;
+            const scale = containerWidth / unscaledViewport.width;
 
-        // wait for rendering to finish
-        renderTask.promise.then(function () {
-            pageRendering = false;
+            const viewport = page.getViewport({ scale: scale });
+
+            // set canvas physical pixel dimensions for high DPI sharpness
+            const outputScale = window.devicePixelRatio || 1;
+            canvas.width = Math.floor(viewport.width * outputScale);
+            canvas.height = Math.floor(viewport.height * outputScale);
+
+            // css display size
+            canvas.style.width = Math.floor(viewport.width) + "px";
+            canvas.style.height = Math.floor(viewport.height) + "px";
+
+            const transform = outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null;
+
+            // render pdf page into canvas context
+            const renderContext = {
+                canvasContext: ctx,
+                viewport: viewport,
+                transform: transform
+            };
+
+            await page.render(renderContext).promise;
+
+            // set text layer dimensions
+            textLayerDiv.innerHTNL = "";
+            textLayerDiv.style.width = `${viewport.width}px`;
+            textLayerDiv.style.height = `${viewport.height}px`;
+
+            // get pdf text content
+            const textContent = await page.getTextContent();
+
+            const textLayer = new pdfjsLib.TextLayer({
+                textContentSource: textContent,
+                container: textLayerDiv,
+                viewport: viewport
+            });
+
+            await textLayer.render();
+
             if (pageNumPending !== null) {
-                // new page rendering is pending
-                renderPage(pageNumPending);
+                const pendingPage = pageNumPending;
                 pageNumPending = null;
+                renderPage(pendingPage);
             }
-        });
 
-        // update page counters
-        // document.getElementById('nnn').textContent = num;
-        });
+            // update page counters
+            document.getElementById("pageNum").textContent = num;
+
+        } catch (error) {
+            console.error("Page rendering error:", error);
+        } finally {
+            pageRendering = false;
+
+            if (pageNumPending !== null) {
+            const pendingPage = pageNumPending;
+            pageNumPending = null;
+            renderPage(pendingPage);
+            }
+        }       
     }
 
     // load pdf when 
@@ -54,11 +125,11 @@ $(document).ready(function () {
                 data: new Uint8Array(buffer),
             }).promise;
 
-            currentPage = 1;
-
+            pageNum = 1;
+            pageNumPending = null;
             document.getElementById("pageCount").textContent = pdfDoc.numPages;
 
-            await renderPage(currentPage);
+            await renderPage(pageNum);
         } catch (error) {
             console.log("PDF loading error:", error);
         }
@@ -74,24 +145,32 @@ $(document).ready(function () {
     }
 
     // display previous page
-    function onPrevPage() {
-        if (pageNum <= 1) {
+    document.getElementById("prevPage").addEventListener("click", () => {
+        if (!pdfDoc || pageNum <= 1) {
             return;
         }
         pageNum--;
         queueRenderPage(pageNum);
-    }
-    document.getElementById("prevPage").addEventListener("click", onPrevPage);
+    });
 
     // display next page
-    function onNextPage() {
-        if (pageNum >= pdfDoc.numPages) {
+    document.getElementById("nextPage").addEventListener("click", () => {
+        if (!pdfDoc || pageNum >= pdfDoc.numPages) {
             return;
         }
         pageNum++;
         queueRenderPage(pageNum);
-    }
-    document.getElementById("nextPage").addEventListener("click", onNextPage);
+    });
+
+    // re-render current page smoothly on window resize
+    let resizeTimer;
+    window.addEventListener("resize", () => {
+        if (!pdfDoc) return;
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+            queueRenderPage(pageNum);
+        }, 150);
+    });
 
     // end pdf.js ============================
 

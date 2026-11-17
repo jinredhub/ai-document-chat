@@ -29,7 +29,8 @@ body {
     margin: 0 auto;
     padding: 10px;
     display: flex;
-    gap: 15px;
+    gap: 10px;
+    position: relative;
 
     h2,
     h3 {
@@ -52,16 +53,58 @@ body {
         display: flex;
         justify-content: space-between;
         align-items: center;
+
+        #uploadPdfButton {
+          margin: 0;
+        }
+      }
+
+      .pdfContainer {
+        position: relative;
+        display: block;
+        margin-top: 20px;
+
+        #pdfCanvas {
+          display: block;
+          width: 100% !important;
+          height: auto !important;
+        }
+
+        .textLayer {
+          position: absolute;
+          inset: 0;
+          overflow: hidden;
+          line-height: 1;
+          transform-origin: 0 0;
+          user-select: text;
+          -webkit-user-select: text;
+
+          &::selection {
+            background: rgba(0, 100, 255, 0.3);
+          }
+
+          span {
+            position: absolute;
+            white-space: pre;
+            color: transparent;
+            transform-origin: 0 0;
+            cursor: text;
+            user-select: text;
+            -webkit-user-select: text;
+          }
+        }
       }
     }
 
     > .right {
       flex: 1 1 40%;
-      background-color: #f3f6fe;
+      background-color: #f3f3f3;
       padding: 20px;
       border: 1px solid #b3b3b3;
       border-radius: 10px;
       height: calc(100vh - 70px);
+      position: sticky;
+      top: 10px;
 
       #chat {
         height: calc(100% - 90px);
@@ -91,7 +134,7 @@ body {
 
     input,
     button {
-      padding: 12px;
+      padding: 8px 12px;
       margin: 8px 0;
     }
 
@@ -115,12 +158,12 @@ body {
   z-index: -1;
 }
 .inputfile + label {
-  font-size: 1.1rem;
+  font-size: 16px;
   font-weight: normal;
   color: white;
   background-color: #2563eb;
   display: inline-block;
-  padding: 12px;
+  padding: 8px 12px;
   border: 1px solid #878786;
   text-align: center;
   border-radius: 5px;
