@@ -1,4 +1,5 @@
 /*
+    PDF.js note ====================================
     - The core functionality of pdfjsLib revolves around a few primary 
     asynchronous methods used to load, read, extract, and render documents
 
@@ -21,6 +22,11 @@
     3. rendering the page -----------------------
     // renders the PDF page graphics into a target 2D canvas
     page.render(renderPrameters)
+
+    OpenAI note =====================================
+    Uploaded file will be save on the account indefinitly and eventyally it will cost storage fee.
+    - To configure an expiration policy for files uploaded via the OpenAI Files API, you can include the optional expires_after parameter. It takes an object specifying an anchor (e.g., created_at) and a duration in seconds (ranging between 3,600 seconds/1 hour and 2,592,000 seconds/30 days).
+
 */
 
 $(document).ready(function () {
@@ -214,11 +220,17 @@ $(document).ready(function () {
             formData.append("file", pdf);
             formData.append("purpose", "user_data");
 
+            // add expiration policy parameters
+            // expires after24 hours (86400 seconds)
+            // valid range: 3600 (1 hour) to 2592000 (30 days)
+            formData.append("expires_after[anchor]", "created_at");
+            formData.append("expires_after[seconds]", "86400");
+
             const response = await fetch("https://api.openai.com/v1/files", {
                 method: "POST",
 
                 headers: {
-                Authorization: "Bearer " + apiKey,
+                    Authorization: "Bearer " + apiKey,
                 },
 
                 body: formData,

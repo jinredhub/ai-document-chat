@@ -99,13 +99,14 @@ body .container > .right #chat {
   padding: 20px 0;
 }
 body .container > .right #chat .message {
-  padding: 0 10px;
+  padding: 10px;
   margin: 10px 0;
   border-radius: 8px;
   white-space: pre-wrap;
 }
 body .container > .right #chat .user {
   background: #2b54df;
+  color: white;
 }
 body .container > .right #chat .ai {
   background: #fff;

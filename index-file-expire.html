@@ -1,0 +1,585 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- google fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <!-- normalize -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css"
+  />
+  <title>Responsive PDF Viewer</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Inter", sans-serif;
+      background: white;
+      margin: 0;
+    }
+    body > .top {
+      background-color: #c4daff;
+      padding: 10px;
+    }
+    body > .top > .wrapper {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+    body > .top > .wrapper .logo {
+      color: black;
+      font-weight: 500;
+      font-size: 22px;
+    }
+    body .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 10px;
+      display: flex;
+      gap: 10px;
+      position: relative;
+    }
+    body .container h2,
+    body .container h3 {
+      margin: 0;
+      font-weight: 400;
+    }
+    body .container > .left {
+      flex: 1 1 60%;
+      background-color: #f3f3f3;
+      padding: 20px;
+      border: 1px solid #b3b3b3;
+      border-radius: 10px;
+    }
+    body .container > .left > h2 {
+      padding-bottom: 10px;
+    }
+    body .container > .left .uploadContainer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    body .container > .left .uploadContainer #uploadPdfButton {
+      margin: 0;
+    }
+    body .container > .left .pdfContainer {
+      position: relative;
+      display: block;
+      margin-top: 20px;
+    }
+    body .container > .left .pdfContainer #pdfCanvas {
+      display: block;
+      width: 100% !important;
+      height: auto !important;
+    }
+    body .container > .left .pdfContainer .textLayer {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      line-height: 1;
+      transform-origin: 0 0;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+    body .container > .left .pdfContainer .textLayer::selection {
+      background: rgba(0, 100, 255, 0.3);
+    }
+    body .container > .left .pdfContainer .textLayer span {
+      position: absolute;
+      white-space: pre;
+      color: transparent;
+      transform-origin: 0 0;
+      cursor: text;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+    body .container > .right {
+      flex: 1 1 40%;
+      background-color: #f3f3f3;
+      padding: 20px;
+      border: 1px solid #b3b3b3;
+      border-radius: 10px;
+      height: calc(100vh - 70px);
+      position: sticky;
+      top: 10px;
+    }
+    body .container > .right #chat {
+      height: calc(100% - 90px);
+      overflow-y: auto;
+      padding: 20px 0;
+    }
+    body .container > .right #chat .message {
+      padding: 0 10px;
+      margin: 10px 0;
+      border-radius: 8px;
+      white-space: pre-wrap;
+    }
+    body .container > .right #chat .user {
+      background: #2b54df;
+    }
+    body .container > .right #chat .ai {
+      background: #fff;
+    }
+    body .container > .right #question {
+      width: calc(100% - 60px);
+    }
+    body .container input,
+    body .container button {
+      padding: 8px 12px;
+      margin: 8px 0;
+    }
+    body .container button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+
+    /*custom input file---------------*/
+    .inputfile {
+      width: 0.1px;
+      height: 0.1px;
+      opacity: 0;
+      overflow: hidden;
+      position: absolute;
+      z-index: -1;
+    }
+
+    .inputfile + label {
+      font-size: 16px;
+      font-weight: normal;
+      color: white;
+      background-color: #2563eb;
+      display: inline-block;
+      padding: 8px 12px;
+      border: 1px solid #878786;
+      text-align: center;
+      border-radius: 5px;
+    }
+
+    .inputfile:focus + label {
+      outline: 1px dotted #000;
+      outline: -webkit-focus-ring-color auto 5px;
+    }
+
+    .inputfile + label * {
+      pointer-events: none;
+    }
+
+    /*end custom input file--------------*/
+  </style>
+</head>
+
+<body>
+  <div class="top">
+    <div class="wrapper">
+      <div class="logo">
+        AskYourPDF
+      </div>
+    </div>
+  </div>
+  <div class="container">
+    <div class="left">
+      <h2>Upload PDF</h2>
+
+      <div class="uploadContainer">
+        <input
+          type="password"
+          id="apiKey"
+          placeholder="1. Enter your OpenAI API key"
+        />
+        
+        <!-- <input type="file" id="pdfInput" accept=".pdf" /> -->
+        <input type="file" id="pdfInput" class="inputfile" accept=".pdf" />
+        <label for="pdfInput"><span>2. Choose a file</span></label>
+        <button id="uploadPdfButton">3. Upload PDF</button>
+        <p id="status"></p>
+      </div>
+
+      <hr />
+
+      <h3>PDF Viewer</h3>
+
+      <div>
+        <button id="prevPage">Previous</button>
+        <span id="pageNum">0</span> / <span id="pageCount">0</span>
+        <button id="nextPage">Next</button>
+      </div>
+
+      <div class="pdfContainer" id="pdfContainer">
+        <canvas id="pdfCanvas"></canvas>
+        <div id="textLayer" class="textLayer"></div>
+      </div>
+    </div>
+
+    <div class="right">
+      <h2>AI Assist</h2>
+
+      <div id="chat">
+        <div class="message ai">Upload a PDF and ask me anything about it.</div>
+      </div>
+
+      <input type="text" id="question" placeholder="Ask a question..." />
+
+      <button id="askBtn" disabled>Ask</button>
+    </div>
+  </div>
+
+  <!-- jquery -->
+  <script
+    src="https://code.jquery.com/jquery-3.4.0.min.js"
+    integrity="sha256-BJeo0qm959uMBGb65z40ejJYGSgR7REI4+CW1fNKwOg="
+    crossorigin="anonymous"
+  ></script>
+
+  <script type="module">
+    import * as pdfjsLib from
+      "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.5.438/build/pdf.mjs";
+
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.5.438/build/pdf.worker.mjs";
+
+    $(document).ready(function () {
+      console.log("pdfjsLib", pdfjsLib);
+
+      let pdfDoc = null;
+      let pageNum = 1;
+      let pageRendering = false;
+      let pageNumPending = null;
+
+      const canvas = document.getElementById("pdfCanvas");
+      const ctx = canvas.getContext("2d");
+      const textLayerDiv = document.getElementById("textLayer");
+      const container = document.getElementById("pdfContainer");
+
+      // get page info from document, resize canvas accordingly, and render page
+      async function renderPage(num) {
+          if (!pdfDoc) return;
+
+          pageRendering = true;
+
+          try {
+              const page = await pdfDoc.getPage(num);
+
+              // base viewport at scale 1.0 to get original pdf dimensions
+              const unscaledViewport = page.getViewport({ scale: 1.0 });
+
+              // calculate scale dynamically to fit the container's current width
+              const containerWidth = container.clientWidth || unscaledViewport.width;
+              const scale = containerWidth / unscaledViewport.width;
+
+              const viewport = page.getViewport({ scale: scale });
+
+              // set canvas physical pixel dimensions for high DPI sharpness
+              const outputScale = window.devicePixelRatio || 1;
+              canvas.width = Math.floor(viewport.width * outputScale);
+              canvas.height = Math.floor(viewport.height * outputScale);
+
+              // css display size
+              canvas.style.width = Math.floor(viewport.width) + "px";
+              canvas.style.height = Math.floor(viewport.height) + "px";
+
+              const transform = outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null;
+
+              // render pdf page into canvas context
+              const renderContext = {
+                  canvasContext: ctx,
+                  viewport: viewport,
+                  transform: transform
+              };
+
+              await page.render(renderContext).promise;
+
+              // set text layer dimensions
+              textLayerDiv.innerHTNL = "";
+              textLayerDiv.style.width = `${viewport.width}px`;
+              textLayerDiv.style.height = `${viewport.height}px`;
+
+              // get pdf text content
+              const textContent = await page.getTextContent();
+
+              const textLayer = new pdfjsLib.TextLayer({
+                  textContentSource: textContent,
+                  container: textLayerDiv,
+                  viewport: viewport
+              });
+
+              await textLayer.render();
+
+              if (pageNumPending !== null) {
+                  const pendingPage = pageNumPending;
+                  pageNumPending = null;
+                  renderPage(pendingPage);
+              }
+
+              // update page counters
+              document.getElementById("pageNum").textContent = num;
+
+          } catch (error) {
+              console.error("Page rendering error:", error);
+          } finally {
+              pageRendering = false;
+
+              if (pageNumPending !== null) {
+              const pendingPage = pageNumPending;
+              pageNumPending = null;
+              renderPage(pendingPage);
+              }
+          }       
+      }
+
+      // load pdf when 
+      document.getElementById("pdfInput").addEventListener("change", async (e) => {
+          const file = e.target.files[0];
+
+          if (!file) return;
+
+          try {
+              const buffer = await file.arrayBuffer();
+
+              pdfDoc = await pdfjsLib.getDocument({
+                  data: new Uint8Array(buffer),
+              }).promise;
+
+              pageNum = 1;
+              pageNumPending = null;
+              document.getElementById("pageCount").textContent = pdfDoc.numPages;
+
+              await renderPage(pageNum);
+          } catch (error) {
+              console.log("PDF loading error:", error);
+          }
+      });
+
+      // if another page rendering in progress, wait until it is done
+      function queueRenderPage(num) {
+          if (pageRendering) {
+              pageNumPending = num;
+          } else {
+              renderPage(num);
+          }
+      }
+
+      // display previous page
+      document.getElementById("prevPage").addEventListener("click", () => {
+          if (!pdfDoc || pageNum <= 1) {
+              return;
+          }
+          pageNum--;
+          queueRenderPage(pageNum);
+      });
+
+      // display next page
+      document.getElementById("nextPage").addEventListener("click", () => {
+          if (!pdfDoc || pageNum >= pdfDoc.numPages) {
+              return;
+          }
+          pageNum++;
+          queueRenderPage(pageNum);
+      });
+
+      // re-render current page smoothly on window resize
+      let resizeTimer;
+      window.addEventListener("resize", () => {
+          if (!pdfDoc) return;
+          clearTimeout(resizeTimer);
+          resizeTimer = setTimeout(() => {
+              queueRenderPage(pageNum);
+          }, 150);
+      });
+
+      // end pdf.js ============================
+
+      // upload pdf, ask questions =======================
+
+      let fileId = null;
+
+      function addMessage(message, type) {
+          const chat = document.getElementById("chat");
+          const div = document.createElement("div");
+
+          div.className = "message " + type;
+          div.textContent = message;
+
+          chat.appendChild(div);
+          chat.scrollTop = chat.scrollHeight;
+      }
+
+      // Upload PDF directly to OpenAI
+
+      async function uploadPDF() {
+          const apiKey = document.getElementById("apiKey").value;
+          const pdf = document.getElementById("pdfInput").files[0];
+          const status = document.getElementById("status");
+
+          if (!apiKey || !pdf) {
+              alert("Enter API key and select PDF");
+              return;
+          }
+
+          if (pdf.type !== "application/pdf" || pdf.size > 50 * 1024 * 1024) {
+              alert("Select a PDF smaller than 50 MB");
+              return;
+          }
+
+          status.innerText = "Uploading PDF...";
+
+          try {
+              const formData = new FormData();
+
+              formData.append("file", pdf);
+              formData.append("purpose", "user_data");
+
+              const response = await fetch("https://api.openai.com/v1/files", {
+                  method: "POST",
+
+                  headers: {
+                      Authorization: "Bearer " + apiKey,
+                  },
+
+                  body: formData,
+              });
+
+              const data = await response.json();
+
+              if (!response.ok) {
+                  throw new Error(data.error?.message || "Upload failed");
+              }
+
+              fileId = data.id;
+              console.log('fileId', fileId)
+
+              status.innerText = "Uploaded: " + pdf.name;
+
+              document.getElementById("askBtn").disabled = false;
+
+              addMessage("PDF uploaded successfully! Ask your questions.", "ai");
+          } catch (error) {
+              status.innerText = error.message;
+          }
+      }
+      $("#uploadPdfButton").on("click", uploadPDF);
+
+      // Ask questions about PDF
+
+      async function askQuestion() {
+          const apiKey = document.getElementById("apiKey").value;
+          const question = document.getElementById("question").value.trim();
+
+          if (!fileId || !question) return;
+
+          document.getElementById("question").value = "";
+
+          addMessage(question, "user");
+
+          const askBtn = document.getElementById("askBtn");
+          askBtn.disabled = true;
+
+          const loading = document.createElement("div");
+          loading.className = "message ai";
+          loading.textContent = "AI is thinking...";
+
+          document.getElementById("chat").appendChild(loading);
+
+          try {
+              const response = await fetch("https://api.openai.com/v1/responses", {
+                  method: "POST",
+                  headers: {
+                      "Content-Type": "application/json",
+                      Authorization: "Bearer " + apiKey,
+                  },
+                  body: JSON.stringify({
+                      model: "gpt-5.6-sol",
+                      instructions: `
+                              You are a PDF question answering assistant.
+
+                              Answer using the uploaded PDF.
+
+                              If information is not available
+                              in the document, say so.
+
+                              Do not invent information.
+                              Mention page numbers when possible.
+                          `,
+                      input: [
+                          {
+                              role: "user",
+                              content: [
+                                  {
+                                      type: "input_file",
+                                      file_id: fileId,
+                                  },
+                                  {
+                                      type: "input_text",
+                                      text: question,
+                                  },
+                              ],
+                          },
+                      ],
+                  }),
+              });
+
+              const data = await response.json();
+
+              if (!response.ok) {
+                  throw new Error(data.error?.message || "Request failed");
+              }
+
+              loading.remove();
+
+              const answer = data.output
+                  .flatMap((item) => item.content || [])
+                  .filter((item) => item.type === "output_text")
+                  .map((item) => item.text)
+                  .join("\n");
+
+              addMessage(answer || "No text response returned.", "ai");
+          } catch (error) {
+              loading.remove();
+
+              addMessage("Error: " + error.message, "ai");
+          } finally {
+              askBtn.disabled = false;
+          }
+      }
+      $("#askBtn").on("click", askQuestion);
+
+      // custom file input -------------------------
+      const inputs = document.querySelectorAll('.inputfile');
+      Array.prototype.forEach.call(inputs, function(input){
+          const label = input.nextElementSibling;
+          const labelVal = label.innerHTML;
+
+          input.addEventListener('change', function(e){
+              let fileName = '';
+              if(this.files && this.files.length > 1){
+                  fileName = (this.getAttribute('data-multiple-caption') || '').replace('{count}', this.files.length);
+              }
+              else{
+                  fileName = e.target.value.split('\\').pop();
+              }
+
+              if(fileName){
+                  label.querySelector('span').innerHTML = fileName;
+              }
+              else{
+                  label.innerHTML = labelVal;
+              }
+          });
+      });
+      // end custom file input -------------------------
+
+
+  });
+
+  </script>
+</body>
+</html>
