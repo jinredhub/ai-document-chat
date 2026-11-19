@@ -20,9 +20,7 @@
   <body>
     <div class="top">
       <div class="wrapper">
-        <div class="logo">
-          AskYourPDF
-        </div>
+        <div class="logo">AskYourPDF</div>
       </div>
     </div>
     <div class="container">
@@ -36,12 +34,12 @@
             placeholder="1. Enter your OpenAI API key"
           />
           
-          <!-- <input type="file" id="pdfInput" accept=".pdf" /> -->
           <input type="file" id="pdfInput" class="inputfile" accept=".pdf" />
           <label for="pdfInput"><span>2. Choose a file</span></label>
           <button id="uploadPdfButton">3. Upload PDF</button>
-          <p id="status"></p>
         </div>
+
+        <p id="statusError"></p>
 
         <hr />
 
@@ -56,6 +54,7 @@
         <div class="pdfContainer" id="pdfContainer">
           <canvas id="pdfCanvas"></canvas>
           <div id="textLayer" class="textLayer"></div>
+          <div id="linkLayer" class="linkLayer"></div>
         </div>
       </div>
 

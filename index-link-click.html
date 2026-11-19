@@ -1,0 +1,1130 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+
+  <!-- Normalize -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css"
+  />
+
+  <title>Responsive PDF Viewer</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Inter", sans-serif;
+      background: white;
+      margin: 0;
+    }
+
+    body > .top {
+      background-color: #c4daff;
+      padding: 10px;
+    }
+
+    body > .top > .wrapper {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    body > .top > .wrapper .logo {
+      color: black;
+      font-weight: 500;
+      font-size: 22px;
+    }
+
+    body .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 10px;
+      display: flex;
+      gap: 10px;
+      position: relative;
+    }
+
+    body .container h2,
+    body .container h3 {
+      margin: 0;
+      font-weight: 400;
+    }
+
+    body .container > .left {
+      flex: 1 1 60%;
+      background-color: #f3f3f3;
+      padding: 20px;
+      border: 1px solid #b3b3b3;
+      border-radius: 10px;
+      min-width: 0;
+    }
+
+    body .container > .left > h2 {
+      padding-bottom: 10px;
+    }
+
+    body .container > .left .uploadContainer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    body .container > .left .uploadContainer #uploadPdfButton {
+      margin: 0;
+    }
+
+    /* PDF container */
+    body .container > .left .pdfContainer {
+      position: relative;
+      display: block;
+      width: 100%;
+      margin-top: 20px;
+    }
+
+    body .container > .left .pdfContainer #pdfCanvas {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    /* Selectable text layer */
+    body .container > .left .pdfContainer .textLayer {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      line-height: 1;
+      transform-origin: 0 0;
+      user-select: text;
+      -webkit-user-select: text;
+      z-index: 1;
+    }
+
+    body .container > .left .pdfContainer .textLayer::selection {
+      background: rgba(0, 100, 255, 0.3);
+    }
+
+    body .container > .left .pdfContainer .textLayer span {
+      position: absolute;
+      white-space: pre;
+      color: transparent;
+      transform-origin: 0 0;
+      cursor: text;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+
+    /* Clickable PDF links layer */
+    .linkLayer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      overflow: hidden;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .linkLayer a {
+      position: absolute;
+      display: block;
+      background: transparent;
+      pointer-events: auto;
+      cursor: pointer;
+      text-decoration: none;
+      outline: none;
+    }
+
+    .linkLayer a:hover {
+      background: rgba(37, 99, 235, 0.12);
+    }
+
+    .linkLayer a:focus-visible {
+      outline: 2px solid #2563eb;
+      background: rgba(37, 99, 235, 0.12);
+    }
+
+    /* Right panel */
+    body .container > .right {
+      flex: 1 1 40%;
+      background-color: #f3f3f3;
+      padding: 20px;
+      border: 1px solid #b3b3b3;
+      border-radius: 10px;
+      height: calc(100vh - 70px);
+      position: sticky;
+      top: 10px;
+      min-width: 0;
+    }
+
+    body .container > .right #chat {
+      height: calc(100% - 90px);
+      overflow-y: auto;
+      padding: 20px 0;
+    }
+
+    body .container > .right #chat .message {
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 8px;
+      white-space: pre-wrap;
+    }
+
+    body .container > .right #chat .user {
+      background: #2b54df;
+      color: white;
+    }
+
+    body .container > .right #chat .ai {
+      background: #fff;
+    }
+
+    body .container > .right #question {
+      width: calc(100% - 60px);
+    }
+
+    body .container input,
+    body .container button {
+      padding: 8px 12px;
+      margin: 8px 0;
+    }
+
+    body .container button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+
+    body .container button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Custom file input */
+    .inputfile {
+      width: 0.1px;
+      height: 0.1px;
+      opacity: 0;
+      overflow: hidden;
+      position: absolute;
+      z-index: -1;
+    }
+
+    .inputfile + label {
+      font-size: 16px;
+      font-weight: normal;
+      color: white;
+      background-color: #2563eb;
+      display: inline-block;
+      padding: 8px 12px;
+      border: 1px solid #878786;
+      text-align: center;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .inputfile:focus + label {
+      outline: 1px dotted #000;
+      outline: -webkit-focus-ring-color auto 5px;
+    }
+
+    .inputfile + label * {
+      pointer-events: none;
+    }
+
+    @media (max-width: 768px) {
+      body .container {
+        flex-direction: column;
+      }
+
+      body .container > .left,
+      body .container > .right {
+        flex: 1 1 auto;
+        width: 100%;
+      }
+
+      body .container > .right {
+        position: relative;
+        top: auto;
+        height: 500px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="top">
+    <div class="wrapper">
+      <div class="logo">
+        AskYourPDF
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <div class="left">
+
+      <h2>Upload PDF</h2>
+
+      <div class="uploadContainer">
+
+        <input
+          type="password"
+          id="apiKey"
+          placeholder="1. Enter your OpenAI API key"
+        />
+
+        <input
+          type="file"
+          id="pdfInput"
+          class="inputfile"
+          accept=".pdf"
+        />
+
+        <label for="pdfInput">
+          <span>2. Choose a file</span>
+        </label>
+
+        <button id="uploadPdfButton">
+          3. Upload PDF
+        </button>
+
+        <p id="status"></p>
+
+      </div>
+
+      <hr />
+
+      <h3>PDF Viewer</h3>
+
+      <div>
+        <button id="prevPage">Previous</button>
+
+        <span id="pageNum">0</span>
+        /
+        <span id="pageCount">0</span>
+
+        <button id="nextPage">Next</button>
+      </div>
+
+      <div class="pdfContainer" id="pdfContainer">
+
+        <canvas id="pdfCanvas"></canvas>
+
+        <!-- Selectable text -->
+        <div id="textLayer" class="textLayer"></div>
+
+        <!-- Clickable links and navigation -->
+        <div id="linkLayer" class="linkLayer"></div>
+
+      </div>
+
+    </div>
+
+    <div class="right">
+
+      <h2>AI Assist</h2>
+
+      <div id="chat">
+        <div class="message ai">
+          Upload a PDF and ask me anything about it.
+        </div>
+      </div>
+
+      <input
+        type="text"
+        id="question"
+        placeholder="Ask a question..."
+      />
+
+      <button id="askBtn" disabled>Ask</button>
+
+    </div>
+
+  </div>
+
+  <!-- jQuery -->
+  <script src="https://code.jquery.com/jquery-3.4.0.min.js"></script>
+
+  <script type="module">
+
+    import * as pdfjsLib from
+      "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.5.438/build/pdf.mjs";
+
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.5.438/build/pdf.worker.mjs";
+
+
+    $(document).ready(function () {
+
+      let pdfDoc = null;
+      let pageNum = 1;
+      let pageRendering = false;
+      let pageNumPending = null;
+
+      const canvas = document.getElementById("pdfCanvas");
+      const ctx = canvas.getContext("2d");
+
+      const textLayerDiv = document.getElementById("textLayer");
+      const linkLayerDiv = document.getElementById("linkLayer");
+      const container = document.getElementById("pdfContainer");
+
+
+      // ==========================================
+      // PDF PAGE RENDERING
+      // ==========================================
+
+      async function renderPage(num) {
+
+        if (!pdfDoc) return;
+
+        pageRendering = true;
+
+        try {
+
+          const page = await pdfDoc.getPage(num);
+
+          // Original PDF dimensions
+          const unscaledViewport = page.getViewport({
+            scale: 1
+          });
+
+          // Responsive scale
+          const containerWidth =
+            container.clientWidth || unscaledViewport.width;
+
+          const scale =
+            containerWidth / unscaledViewport.width;
+
+          const viewport = page.getViewport({
+            scale: scale
+          });
+
+          // High DPI rendering
+          const outputScale = window.devicePixelRatio || 1;
+
+          canvas.width = Math.floor(
+            viewport.width * outputScale
+          );
+
+          canvas.height = Math.floor(
+            viewport.height * outputScale
+          );
+
+          canvas.style.width = viewport.width + "px";
+          canvas.style.height = viewport.height + "px";
+
+          // Canvas transform
+          const transform = outputScale !== 1
+            ? [
+                outputScale,
+                0,
+                0,
+                outputScale,
+                0,
+                0
+              ]
+            : null;
+
+          // Render PDF
+          await page.render({
+            canvasContext: ctx,
+            viewport: viewport,
+            transform: transform
+          }).promise;
+
+
+          // ==========================================
+          // TEXT LAYER
+          // ==========================================
+
+          textLayerDiv.replaceChildren();
+
+          textLayerDiv.style.width =
+            viewport.width + "px";
+
+          textLayerDiv.style.height =
+            viewport.height + "px";
+
+          const textContent = await page.getTextContent();
+
+          const textLayer = new pdfjsLib.TextLayer({
+            textContentSource: textContent,
+            container: textLayerDiv,
+            viewport: viewport
+          });
+
+          await textLayer.render();
+
+
+          // ==========================================
+          // CLICKABLE LINKS AND NAVIGATION
+          // ==========================================
+
+          await renderLinks(page, viewport);
+
+
+          // Update page number
+          document.getElementById("pageNum").textContent = num;
+
+        } catch (error) {
+
+          console.error("Page rendering error:", error);
+
+        } finally {
+
+          pageRendering = false;
+
+          // Render pending page if necessary
+          if (pageNumPending !== null) {
+
+            const pendingPage = pageNumPending;
+
+            pageNumPending = null;
+
+            renderPage(pendingPage);
+
+          }
+
+        }
+
+      }
+
+
+      // ==========================================
+      // RENDER PDF LINKS
+      // ==========================================
+
+      async function renderLinks(page, viewport) {
+
+        // Clear existing links
+        linkLayerDiv.replaceChildren();
+
+        linkLayerDiv.style.width =
+          viewport.width + "px";
+
+        linkLayerDiv.style.height =
+          viewport.height + "px";
+
+
+        // Get PDF annotations
+        const annotations = await page.getAnnotations({
+          intent: "display"
+        });
+
+
+        for (const annotation of annotations) {
+
+          // Only process link annotations
+          if (annotation.subtype !== "Link") {
+            continue;
+          }
+
+          if (!annotation.rect) {
+            continue;
+          }
+
+
+          // ==========================================
+          // CONVERT PDF COORDINATES TO VIEWPORT
+          // ==========================================
+
+          const rect = annotation.rect;
+
+          // Convert bottom-left PDF coordinate
+          const point1 = viewport.convertToViewportPoint(
+            rect[0],
+            rect[1]
+          );
+
+          // Convert top-right PDF coordinate
+          const point2 = viewport.convertToViewportPoint(
+            rect[2],
+            rect[3]
+          );
+
+
+          // Calculate screen coordinates
+          const left = Math.min(
+            point1[0],
+            point2[0]
+          );
+
+          const top = Math.min(
+            point1[1],
+            point2[1]
+          );
+
+          const width = Math.abs(
+            point2[0] - point1[0]
+          );
+
+          const height = Math.abs(
+            point2[1] - point1[1]
+          );
+
+
+          // Create clickable link
+          const link = document.createElement("a");
+
+          link.style.left = left + "px";
+          link.style.top = top + "px";
+
+          link.style.width = width + "px";
+          link.style.height = height + "px";
+
+
+          // ==========================================
+          // EXTERNAL LINKS
+          // ==========================================
+
+          const externalUrl =
+            annotation.url || annotation.unsafeUrl;
+
+          if (externalUrl) {
+
+            let parsedUrl;
+
+            try {
+
+              parsedUrl = new URL(
+                externalUrl,
+                document.baseURI
+              );
+
+            } catch (error) {
+
+              console.warn("Invalid PDF link:", externalUrl);
+              continue;
+
+            }
+
+            // Only allow safe navigation protocols
+            if (!["http:", "https:", "mailto:", "tel:"].includes(parsedUrl.protocol)) {
+              continue;
+            }
+
+            link.href = parsedUrl.href;
+
+            link.target = "_blank";
+
+            link.rel = "noopener noreferrer";
+
+            link.title = "Open external link";
+
+          }
+
+
+          // ==========================================
+          // INTERNAL PDF NAVIGATION
+          // ==========================================
+
+          else if (annotation.dest) {
+
+            link.href = "#";
+
+            link.title = "Go to another page in this PDF";
+
+            // Capture destination
+            const destination = annotation.dest;
+
+            link.addEventListener("click", async function (event) {
+
+              event.preventDefault();
+
+              try {
+
+                let dest = destination;
+
+                // Resolve named destinations
+                if (typeof dest === "string") {
+
+                  dest = await pdfDoc.getDestination(dest);
+
+                }
+
+                if (!dest || !Array.isArray(dest)) {
+                  return;
+                }
+
+                // Get destination page reference
+                const pageReference = dest[0];
+
+                // Convert page reference to page number
+                const destinationPage =
+                  await pdfDoc.getPageIndex(pageReference);
+
+                // PDF.js pages are zero-indexed
+                const targetPage = destinationPage + 1;
+
+                if (
+                  targetPage < 1 ||
+                  targetPage > pdfDoc.numPages
+                ) {
+                  return;
+                }
+
+                // Navigate to destination page
+                pageNum = targetPage;
+
+                queueRenderPage(pageNum);
+
+              } catch (error) {
+
+                console.error(
+                  "PDF navigation error:",
+                  error
+                );
+
+              }
+
+            });
+
+          }
+
+          // Skip annotations without a usable destination
+          else {
+
+            continue;
+
+          }
+
+
+          // Add link to the link layer
+          linkLayerDiv.appendChild(link);
+
+        }
+
+      }
+
+
+      // ==========================================
+      // LOAD PDF
+      // ==========================================
+
+      document
+        .getElementById("pdfInput")
+        .addEventListener("change", async (e) => {
+
+          const file = e.target.files[0];
+
+          if (!file) return;
+
+          try {
+
+            const buffer = await file.arrayBuffer();
+
+            pdfDoc = await pdfjsLib.getDocument({
+              data: new Uint8Array(buffer)
+            }).promise;
+
+            pageNum = 1;
+            pageNumPending = null;
+
+            document.getElementById("pageCount").textContent =
+              pdfDoc.numPages;
+
+            await renderPage(pageNum);
+
+          } catch (error) {
+
+            console.error("PDF loading error:", error);
+
+          }
+
+        });
+
+
+      // ==========================================
+      // PAGE NAVIGATION
+      // ==========================================
+
+      function queueRenderPage(num) {
+
+        if (pageRendering) {
+
+          pageNumPending = num;
+
+        } else {
+
+          renderPage(num);
+
+        }
+
+      }
+
+
+      // Previous page
+      document
+        .getElementById("prevPage")
+        .addEventListener("click", () => {
+
+          if (!pdfDoc || pageNum <= 1) {
+            return;
+          }
+
+          pageNum--;
+
+          queueRenderPage(pageNum);
+
+        });
+
+
+      // Next page
+      document
+        .getElementById("nextPage")
+        .addEventListener("click", () => {
+
+          if (!pdfDoc || pageNum >= pdfDoc.numPages) {
+            return;
+          }
+
+          pageNum++;
+
+          queueRenderPage(pageNum);
+
+        });
+
+
+      // ==========================================
+      // RESPONSIVE RESIZING
+      // ==========================================
+
+      let resizeTimer;
+
+      window.addEventListener("resize", () => {
+
+        if (!pdfDoc) return;
+
+        clearTimeout(resizeTimer);
+
+        resizeTimer = setTimeout(() => {
+
+          queueRenderPage(pageNum);
+
+        }, 150);
+
+      });
+
+
+      // ==========================================
+      // OPENAI PDF UPLOAD AND CHAT
+      // ==========================================
+
+      let fileId = null;
+
+
+      function addMessage(message, type) {
+
+        const chat = document.getElementById("chat");
+
+        const div = document.createElement("div");
+
+        div.className = "message " + type;
+
+        div.textContent = message;
+
+        chat.appendChild(div);
+
+        chat.scrollTop = chat.scrollHeight;
+
+      }
+
+
+      // Upload PDF
+      async function uploadPDF() {
+
+        const apiKey =
+          document.getElementById("apiKey").value;
+
+        const pdf =
+          document.getElementById("pdfInput").files[0];
+
+        const status =
+          document.getElementById("status");
+
+
+        if (!apiKey || !pdf) {
+
+          alert("Enter API key and select PDF");
+
+          return;
+
+        }
+
+
+        if (
+          pdf.type !== "application/pdf" ||
+          pdf.size > 50 * 1024 * 1024
+        ) {
+
+          alert("Select a PDF smaller than 50 MB");
+
+          return;
+
+        }
+
+
+        status.innerText = "Uploading PDF...";
+
+
+        try {
+
+          const formData = new FormData();
+
+          formData.append("file", pdf);
+
+          formData.append("purpose", "user_data");
+
+
+          const response = await fetch(
+            "https://api.openai.com/v1/files",
+            {
+              method: "POST",
+
+              headers: {
+                Authorization: "Bearer " + apiKey
+              },
+
+              body: formData
+            }
+          );
+
+
+          const data = await response.json();
+
+
+          if (!response.ok) {
+
+            throw new Error(
+              data.error?.message || "Upload failed"
+            );
+
+          }
+
+
+          fileId = data.id;
+
+          console.log("fileId", fileId);
+
+
+          status.innerText = "Uploaded: " + pdf.name;
+
+          document.getElementById("askBtn").disabled = false;
+
+          addMessage(
+            "PDF uploaded successfully! Ask your questions.",
+            "ai"
+          );
+
+
+        } catch (error) {
+
+          status.innerText = error.message;
+
+        }
+
+      }
+
+
+      $("#uploadPdfButton").on("click", uploadPDF);
+
+
+      // Ask questions
+      async function askQuestion() {
+
+        const apiKey =
+          document.getElementById("apiKey").value;
+
+        const question =
+          document.getElementById("question").value.trim();
+
+
+        if (!fileId || !question) return;
+
+
+        document.getElementById("question").value = "";
+
+        addMessage(question, "user");
+
+
+        const askBtn = document.getElementById("askBtn");
+
+        askBtn.disabled = true;
+
+
+        const loading = document.createElement("div");
+
+        loading.className = "message ai";
+
+        loading.textContent = "AI is thinking...";
+
+        document.getElementById("chat").appendChild(loading);
+
+
+        try {
+
+          const response = await fetch(
+            "https://api.openai.com/v1/responses",
+            {
+              method: "POST",
+
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: "Bearer " + apiKey
+              },
+
+              body: JSON.stringify({
+
+                model: "gpt-5.6-sol",
+
+                instructions: `
+                  You are a PDF question answering assistant.
+
+                  Answer using the uploaded PDF.
+
+                  If information is not available
+                  in the document, say so.
+
+                  Do not invent information.
+
+                  Mention page numbers when possible.
+                `,
+
+                input: [
+                  {
+                    role: "user",
+
+                    content: [
+                      {
+                        type: "input_file",
+                        file_id: fileId
+                      },
+                      {
+                        type: "input_text",
+                        text: question
+                      }
+                    ]
+                  }
+                ]
+
+              })
+            }
+          );
+
+
+          const data = await response.json();
+
+
+          if (!response.ok) {
+
+            throw new Error(
+              data.error?.message || "Request failed"
+            );
+
+          }
+
+
+          loading.remove();
+
+
+          const answer = data.output
+            .flatMap(item => item.content || [])
+            .filter(item => item.type === "output_text")
+            .map(item => item.text)
+            .join("\n");
+
+
+          addMessage(
+            answer || "No text response returned.",
+            "ai"
+          );
+
+
+        } catch (error) {
+
+          loading.remove();
+
+          addMessage(
+            "Error: " + error.message,
+            "ai"
+          );
+
+        } finally {
+
+          askBtn.disabled = false;
+
+        }
+
+      }
+
+
+      $("#askBtn").on("click", askQuestion);
+
+
+      // ==========================================
+      // CUSTOM FILE INPUT
+      // ==========================================
+
+      const inputs = document.querySelectorAll(".inputfile");
+
+      Array.prototype.forEach.call(inputs, function(input) {
+
+        const label = input.nextElementSibling;
+
+        const labelVal = label.innerHTML;
+
+
+        input.addEventListener("change", function(e) {
+
+          let fileName = "";
+
+
+          if (this.files && this.files.length > 1) {
+
+            fileName = (
+              this.getAttribute("data-multiple-caption") || ""
+            ).replace("{count}", this.files.length);
+
+          } else {
+
+            fileName = e.target.value.split("\\").pop();
+
+          }
+
+
+          if (fileName) {
+
+            label.querySelector("span").textContent = fileName;
+
+          } else {
+
+            label.innerHTML = labelVal;
+
+          }
+
+        });
+
+      });
+
+    });
+
+  </script>
+
+</body>
+</html>

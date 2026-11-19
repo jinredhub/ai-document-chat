@@ -59,6 +59,11 @@ body {
         }
       }
 
+      #statusError {
+        margin: 5px 0;
+        color: red;
+      }
+
       .pdfContainer {
         position: relative;
         display: block;
@@ -78,6 +83,7 @@ body {
           transform-origin: 0 0;
           user-select: text;
           -webkit-user-select: text;
+          z-index: 1;
 
           &::selection {
             background: rgba(0, 100, 255, 0.3);
@@ -91,6 +97,33 @@ body {
             cursor: text;
             user-select: text;
             -webkit-user-select: text;
+          }
+        }
+
+        .linkLayer {
+          position: absolute;
+          top: 0;
+          left: 0;
+          overflow: hidden;
+          z-index: 2;
+          pointer-events: none;
+
+          a {
+            position: absolute;
+            display: block;
+            background: transparent;
+            pointer-events: auto;
+            cursor: pointer;
+            text-decoration: none;
+            outline: none;
+
+            &:hover {
+              background: rgba(37, 99, 235, 0.12);
+            }
+            &:focus-visible {
+              outline: 2px solid #2563eb;
+              background: rgba(37, 99, 235, 0.12);
+            }
           }
         }
       }
@@ -124,7 +157,7 @@ body {
         }
 
         .ai {
-          background: #fff;
+          background: #c9e9f4;
         }
       }
 
@@ -168,12 +201,13 @@ body {
   border: 1px solid #878786;
   text-align: center;
   border-radius: 5px;
+  // max character length
+  max-width: 20ch;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-// .inputfile:focus + label,
-// .inputfile + label:hover {
-//   background-color: #f59d18;
-//   color: white;
-// }
+
 .inputfile:focus + label {
   outline: 1px dotted #000;
   outline: -webkit-focus-ring-color auto 5px;

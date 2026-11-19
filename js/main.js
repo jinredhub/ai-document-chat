@@ -23,6 +23,9 @@
     // renders the PDF page graphics into a target 2D canvas
     page.render(renderPrameters)
 
+    - Dynamic Scale Calculation: Replace hardcoded scale = 0.8 with a dynamic calculation based on container.clientWidth divided by the page's natural width at scale 1.0.
+    - HiDPI / Retina Sharpness: Add window.devicePixelRatio to scaling to the canvas context rendering.
+
     OpenAI note =====================================
     Uploaded file will be save on the account indefinitly and eventyally it will cost storage fee.
     - To configure an expiration policy for files uploaded via the OpenAI Files API, you can include the optional expires_after parameter. It takes an object specifying an anchor (e.g., created_at) and a duration in seconds (ranging between 3,600 seconds/1 hour and 2,592,000 seconds/30 days).
@@ -39,8 +42,10 @@ $(document).ready(function () {
 
     const canvas = document.getElementById("pdfCanvas");
     const ctx = canvas.getContext("2d");
-    const textLayerDiv = document.getElementById("textLayer");
+
     const container = document.getElementById("pdfContainer");
+    const textLayerDiv = document.getElementById("textLayer");
+    const linkLayerDiv = document.getElementById("linkLayer");
 
     // get page info from document, resize canvas accordingly, and render page
     async function renderPage(num) {
@@ -80,10 +85,12 @@ $(document).ready(function () {
 
             await page.render(renderContext).promise;
 
+            // text layer ================================
+
             // set text layer dimensions
-            textLayerDiv.innerHTNL = "";
-            textLayerDiv.style.width = `${viewport.width}px`;
-            textLayerDiv.style.height = `${viewport.height}px`;
+            textLayerDiv.replaceChildren();
+            textLayerDiv.style.width = viewport.width + "px";
+            textLayerDiv.style.height = viewport.height + "px";
 
             // get pdf text content
             const textContent = await page.getTextContent();
@@ -96,11 +103,15 @@ $(document).ready(function () {
 
             await textLayer.render();
 
-            if (pageNumPending !== null) {
-                const pendingPage = pageNumPending;
-                pageNumPending = null;
-                renderPage(pendingPage);
-            }
+            // clickable links and navigation =======================
+
+            await renderLinks(page, viewport);
+
+            // if (pageNumPending !== null) {
+            //     const pendingPage = pageNumPending;
+            //     pageNumPending = null;
+            //     renderPage(pendingPage);
+            // }
 
             // update page counters
             document.getElementById("pageNum").textContent = num;
@@ -111,11 +122,148 @@ $(document).ready(function () {
             pageRendering = false;
 
             if (pageNumPending !== null) {
-            const pendingPage = pageNumPending;
-            pageNumPending = null;
-            renderPage(pendingPage);
+                const pendingPage = pageNumPending;
+                pageNumPending = null;
+                renderPage(pendingPage);
             }
         }       
+    }
+
+    // render pdf links
+    async function renderLinks(page, viewport) {
+        // clear existing links
+        linkLayerDiv.replaceChildren();
+        linkLayerDiv.style.width = viewport.width + "px";
+        linkLayerDiv.style.height = viewport.height + "px";
+
+        // get pdf annotations
+        const annotations = await page.getAnnotations({
+            intent: "display"
+        });
+
+        for (const annotation of annotations) {
+            console.log('annotation', annotation);
+            // only process link annotations
+            if (annotation.subtype !== "Link") {
+                continue;
+            }
+
+            if(!annotation.rect) {
+                continue;
+            }
+
+            // convert pdf coordinates to viewport
+            const rect = annotation.rect;
+
+            // convert bottom-left pdf coordinate
+            const point1 = viewport.convertToViewportPoint(rect[0], rect[1]);
+
+            // convert top-right pdf coordinate
+            const point2 = viewport.convertToViewportPoint(rect[2], rect[3]);
+
+            // calculate screen coordinates
+            const left = Math.min(point1[0], point2[0]);
+
+            const top = Math.min(point1[1], point2[1]);
+
+            const width = Math.abs(point2[0] - point1[0]);
+
+            const height = Math.abs(point2[1] - point1[1]);
+
+            // Create clickable link
+            const link = document.createElement("a");
+
+            link.style.left = left + "px";
+            link.style.top = top + "px";
+
+            link.style.width = width + "px";
+            link.style.height = height + "px";
+
+            // external links
+            const externalUrl = annotation.url || annotation.unsafeUrl;
+
+            if (externalUrl) {
+                let parsedUrl;
+
+                try {
+                    parsedUrl = new URL(
+                        externalUrl,
+                        document.baseURI
+                    );
+                } catch (error) {
+                    console.warn("Invalid PDF link:", externalUrl);
+                    continue;
+                }
+
+                // Only allow safe navigation protocols
+                if (!["http:", "https:", "mailto:", "tel:"].includes(parsedUrl.protocol)) {
+                    continue;
+                }
+
+                link.href = parsedUrl.href;
+                link.target = "_blank";
+                link.rel = "noopener noreferrer";
+                link.title = "Open external link";
+            }
+
+            // internal pdf navigation
+            else if (annotation.dest) {
+                link.href = "#";
+                link.title = "Go to another page in this PDF";
+
+                // Capture destination
+                const destination = annotation.dest;
+
+                link.addEventListener("click", async function (event) {
+
+                    event.preventDefault();
+
+                    try {
+                        let dest = destination;
+
+                        // Resolve named destinations
+                        if (typeof dest === "string") {
+                            dest = await pdfDoc.getDestination(dest);
+                        }
+
+                        if (!dest || !Array.isArray(dest)) {
+                            return;
+                        }
+
+                        // Get destination page reference
+                        const pageReference = dest[0];
+
+                        // Convert page reference to page number
+                        const destinationPage = await pdfDoc.getPageIndex(pageReference);
+
+                        // PDF.js pages are zero-indexed
+                        const targetPage = destinationPage + 1;
+
+                        if (
+                            targetPage < 1 ||
+                            targetPage > pdfDoc.numPages
+                        ) {
+                            return;
+                        }
+
+                        // Navigate to destination page
+                        pageNum = targetPage;
+
+                        queueRenderPage(pageNum);
+
+                    } catch (error) {
+                        console.error("PDF navigation error:", error);
+                    }
+                });
+            }
+            // skip annotations without a usable destination
+            else {
+                continue;
+            }
+
+            // add link to the link layer
+            linkLayerDiv.appendChild(link);
+        }
     }
 
     // load pdf when 
@@ -200,7 +348,10 @@ $(document).ready(function () {
     async function uploadPDF() {
         const apiKey = document.getElementById("apiKey").value;
         const pdf = document.getElementById("pdfInput").files[0];
-        const status = document.getElementById("status");
+        const statusError = document.getElementById("statusError");
+
+        // empty error message
+        statusError.innerText = "";
 
         if (!apiKey || !pdf) {
             alert("Enter API key and select PDF");
@@ -212,7 +363,7 @@ $(document).ready(function () {
             return;
         }
 
-        status.innerText = "Uploading PDF...";
+        addMessage("Uploading PDF...", "ai");
 
         try {
             const formData = new FormData();
@@ -238,6 +389,9 @@ $(document).ready(function () {
 
             const data = await response.json();
 
+            console.log('response ', response);
+            console.log('response data', data);
+
             if (!response.ok) {
                 throw new Error(data.error?.message || "Upload failed");
             }
@@ -245,13 +399,12 @@ $(document).ready(function () {
             fileId = data.id;
             console.log('fileId', fileId)
 
-            status.innerText = "Uploaded: " + pdf.name;
-
             document.getElementById("askBtn").disabled = false;
 
             addMessage("PDF uploaded successfully! Ask your questions.", "ai");
+
         } catch (error) {
-            status.innerText = error.message;
+            statusError.innerText = error.message;
         }
     }
     $("#uploadPdfButton").on("click", uploadPDF);
@@ -316,6 +469,9 @@ $(document).ready(function () {
             });
 
             const data = await response.json();
+
+            console.log('answer res', response);
+            console.log('answer data', data);
 
             if (!response.ok) {
                 throw new Error(data.error?.message || "Request failed");
