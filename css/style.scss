@@ -140,7 +140,7 @@ body {
       top: 10px;
 
       #chat {
-        height: calc(100% - 90px);
+        height: calc(100% - 70px);
         overflow-y: auto;
         padding: 20px 0;
 
@@ -149,6 +149,20 @@ body {
           margin: 10px 0;
           border-radius: 8px;
           white-space: pre-wrap;
+          display: flex;
+          flex-direction: column;
+
+          // adjust markdown margin/spacing
+          > * {
+            margin-top: 6px;
+            margin-bottom: 6px;
+          }
+          > :first-child {
+            margin-top: 0;
+          }
+          > :last-child {
+            margin-bottom: 0;
+          }
         }
 
         .user {
@@ -161,8 +175,40 @@ body {
         }
       }
 
-      #question {
-        width: calc(100% - 60px);
+      .questionWrapper {
+        display: flex;
+        align-items: flex-end;
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: calc(100% - 20px);
+        margin: 10px;
+
+        #question {
+          width: calc(100% - 60px);
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          padding: 8px;
+          resize: none;
+          // start at 1 row and grow up to 5 rows
+          field-sizing: content;
+          // 1 row + top/bottom padding
+          min-height: calc(1lh + 16px);
+          // 5 rows + top/bottom padding
+          max-height: calc(5lh + 16px);
+        }
+
+        #askBtn {
+          margin: 0;
+          position: absolute;
+          bottom: 0;
+          right: 0;
+
+          &:disabled {
+            background: #a7a7a7;
+          }
+        }
       }
     }
 

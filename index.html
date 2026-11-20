@@ -15,6 +15,10 @@
     />
     <!-- css -->
     <link rel="stylesheet" type="text/css" href="css/style.css" />
+    <!-- converts markdown to html (like **bold**) -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- DOMPurify - Security (Strips out malicious code (like <script> tags or onerror attributes) from the generated HTML) -->
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
   </head>
 
   <body>
@@ -65,9 +69,17 @@
           <div class="message ai">Upload a PDF and ask me anything about it.</div>
         </div>
 
-        <input type="text" id="question" placeholder="Ask a question..." />
+        <!-- <input type="text" id="question" placeholder="Ask a question..." /> -->
 
-        <button id="askBtn" disabled>Ask</button>
+        <div class="questionWrapper">
+          <textarea 
+            id="question" 
+            placeholder="Ask a question..."
+            maxlength="500"
+            rows="1"
+          ></textarea>
+          <button id="askBtn" disabled>Ask</button>
+        </div>
       </div>
     </div>
 

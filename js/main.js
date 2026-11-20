@@ -33,7 +33,7 @@
 */
 
 $(document).ready(function () {
-    console.log("pdfjsLib", pdfjsLib);
+    // console.log("pdfjsLib", pdfjsLib);
 
     let pdfDoc = null;
     let pageNum = 1;
@@ -142,7 +142,6 @@ $(document).ready(function () {
         });
 
         for (const annotation of annotations) {
-            console.log('annotation', annotation);
             // only process link annotations
             if (annotation.subtype !== "Link") {
                 continue;
@@ -333,11 +332,23 @@ $(document).ready(function () {
     let fileId = null;
 
     function addMessage(message, type) {
+        // console.log('message', message);
+
         const chat = document.getElementById("chat");
         const div = document.createElement("div");
 
         div.className = "message " + type;
-        div.textContent = message;
+
+        if(type === "ai") {
+            // convert Markdown to html
+            const html = marked.parse(message);
+            // sanitize html to prevent XSS
+            div.innerHTML = DOMPurify.sanitize(html);
+        }
+        else {
+            // user messages are plain text
+            div.textContent = message;
+        }
 
         chat.appendChild(div);
         chat.scrollTop = chat.scrollHeight;
@@ -389,15 +400,15 @@ $(document).ready(function () {
 
             const data = await response.json();
 
-            console.log('response ', response);
-            console.log('response data', data);
+            // console.log('response ', response);
+            // console.log('response data', data);
 
             if (!response.ok) {
                 throw new Error(data.error?.message || "Upload failed");
             }
 
             fileId = data.id;
-            console.log('fileId', fileId)
+            // console.log('fileId', fileId)
 
             document.getElementById("askBtn").disabled = false;
 
@@ -470,8 +481,8 @@ $(document).ready(function () {
 
             const data = await response.json();
 
-            console.log('answer res', response);
-            console.log('answer data', data);
+            // console.log('answer res', response);
+            // console.log('answer data', data);
 
             if (!response.ok) {
                 throw new Error(data.error?.message || "Request failed");
@@ -495,6 +506,16 @@ $(document).ready(function () {
         }
     }
     $("#askBtn").on("click", askQuestion);
+
+    // handle enter key
+    $("#question").on("keydown", (event)  => {
+        if(event.key === "Enter" && !event.shiftKey) {
+            event.preventDefault();
+            askQuestion();
+        }
+    })
+
+
 
     // custom file input -------------------------
     const inputs = document.querySelectorAll('.inputfile');
