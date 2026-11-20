@@ -1,6 +1,9 @@
 # ai-document-chat
 Upload a PDF and ask anything about it
 
+## visit website
+https://ai-document-chat.up.railway.app/
+
 ## local developmenet
 use liver server
 
